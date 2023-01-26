@@ -1,0 +1,10 @@
+name: 'Hello World'
+description: 'Greet someone when a new commit is pushed to the repository'
+on: push
+jobs:
+  hello_world:
+    runs-on: windows-latest
+
+    steps:
+    - name: Echo Hello World
+      run: echo "Hello World"
