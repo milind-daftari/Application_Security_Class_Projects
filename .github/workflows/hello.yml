@@ -1,4 +1,4 @@
-# Homework 1 Part 1: Setting up Your Environment
+# Homework 1 Part 1: Setting up your Environment
 name: 'Hello World'
 on: [push]
 jobs:
