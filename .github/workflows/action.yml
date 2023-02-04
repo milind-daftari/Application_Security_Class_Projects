@@ -6,11 +6,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: clone
-        run: git clone https://github.com/NYUAppSec/assignment-1-milind-daftari.git
+      - uses: actions/checkout@v3
 
       - name: execute make
-        run: make giftcardreader
+        run: make
 
       - name: execute make test
         run: make test
