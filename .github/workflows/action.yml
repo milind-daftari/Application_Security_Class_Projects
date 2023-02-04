@@ -1,8 +1,8 @@
 # Homework 1 Part 2: Github Action to execute make tests
-name: 'make tests'
+name: 'make test'
 on: [push]
 jobs:
-  make:
+  make test:
     runs-on: ubuntu-latest
 
     steps:
