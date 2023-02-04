@@ -6,6 +6,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: clone
+        run: git clone https://github.com/NYUAppSec/assignment-1-milind-daftari.git
+
       - name: execute make
         run: make giftcardreader
 
