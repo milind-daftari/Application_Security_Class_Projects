@@ -2,7 +2,7 @@
 name: 'make test'
 on: [push]
 jobs:
-  make test:
+  make_test:
     runs-on: ubuntu-latest
 
     steps:
