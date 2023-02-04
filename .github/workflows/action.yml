@@ -6,5 +6,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: execute make and make test
-        run: make && make test
+      - name: execute make
+        run: make
+        
+      - name: execute make test
+        run: make test
