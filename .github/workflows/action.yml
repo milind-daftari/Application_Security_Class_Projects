@@ -7,7 +7,7 @@ jobs:
 
     steps:
       - name: execute make
-        run: make
-        
+        run: make giftcardreader
+
       - name: execute make test
         run: make test
