@@ -26,7 +26,7 @@ void animate(char *msg, unsigned char *program) {
     unsigned char *pc = program;
     int i = 0;
     int zf = 0;
-    while (pc < program+256) {
+    while (pc < program+256 && mptr < msg+32) {
         unsigned char op, arg1, arg2;
         op = *pc;
         arg1 = *(pc+1);
@@ -38,10 +38,18 @@ void animate(char *msg, unsigned char *program) {
                 regs[arg1] = *mptr;
                 break;
             case 0x02:
-                *mptr = regs[arg1];
+                // fix for crash1.gft
+                if ((arg1 < 16) && (msg <= mptr && mptr < msg + 32))
+                {
+                    *mptr = regs[arg1];
+                }
                 break;
             case 0x03:
-                mptr += (char)arg1;
+                // fix for crash1.gft
+                if (msg <= mptr && mptr < msg + 32) 
+                {
+                    mptr += (char)arg1;
+                }
                 break;
             case 0x04:
                 regs[arg2] = arg1;
@@ -60,7 +68,7 @@ void animate(char *msg, unsigned char *program) {
             case 0x08:
                 goto done;
             case 0x09:
-                pc += (unsigned char)arg1;
+                pc += (unsigned char)arg1; // fix for hang.gft
                 break;
             case 0x10:
                 if (zf) pc += (char)arg1;
@@ -194,6 +202,13 @@ struct this_gift_card *gift_card_reader(FILE *input_fd) {
 		/* JAC: Why aren't return types checked? */
 		fread(&ret_val->num_bytes, 4,1, input_fd);
 
+        // fix for crash2.gft
+        if (ret_val->num_bytes < 0)
+        {
+            exit(0);
+        }
+
+
 		// Make something the size of the rest and read it in
 		ptr = malloc(ret_val->num_bytes);
 		fread(ptr, ret_val->num_bytes, 1, input_fd);
@@ -286,6 +301,8 @@ int main(int argc, char **argv) {
 	thisone = gift_card_reader(input_fd);
 	if (argv[1][0] == '1') print_gift_card_info(thisone);
     else if (argv[1][0] == '2') gift_card_json(thisone);
+
+    fclose(input_fd); // Extra fix: Close the file when task is complete.
 
 	return 0;
 }

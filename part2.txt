@@ -1,2 +1,20 @@
-hang.gft: This program goes into an infinite loop when arg1 = 253. This is because of the line pc += (char)arg1. In C, the type char is signed, meaning it can be either positive or negative. When arg1 is 253, casting it to a char type results in the value -3, which causes the program counter pc to decrement instead of increment. As a result, the pc continues to point to the same instruction, causing an infinite loop. This can be verified by checking the adresses in gdb. The input would be data += b'\x09\xfd' in the place of data += b'\x08' * 256 . Here, the hexadecimal xfd is 253 in decimal, and -3 in decimal from the signed 2's complement.
+hang.gft: This program goes into an infinite loop when arg1 = 253. This is because of the line pc += (char)arg1. In C, the type char is signed, meaning it can be either positive or negative. When arg1 is 253, casting it to a char type results in the value -3, which causes the program counter pc to decrement instead of increment. As a result, the pc continues to point to the same instruction, causing an infinite loop. This can be verified by checking the adresses in gdb. The input would be data += b'\x09\xfd' + b'\x08' * 253  in the place of data += b'\x08' * 256 . Here, the hexadecimal xfd is 253 in decimal, and -3 in decimal from the signed 2's complement. 
+
+Fix: Updated int to unsigned int for "case 0x09". pc += (unsigned char)arg1;
+
+
+crash1.gft: This program alters the behaviour of giftcardreader.c as it allows an overwrite at a random memory location (which can be in the previous location or locations pointed to by other variables used in the function). In my example, my input that causes this behaviour is data += b'\x03\xe1\x00\x02\x00\x00' * 42 + b'\x08' * 4. Here, the switch x03 changes the mptr pointer to point to other memory location at a differential of xe1, which is equivalent to -31 in this case. In the next step, we overwrite the value at the new location using the switch x02, with a value x00 and this is repeated 42 times, followed by x08 swicthes repeated 4 times to end the program. All this, combined together, leads to a Segmentation Fault.
+
+Fix: Added an if condition for case 0x03 -> if (msg <= mptr && mptr < msg + 32). Also, for case 0x02 -> if ((arg1 < 16) && (msg <= mptr && mptr < msg + 32)).
+
+
+crash2.gft: This program causes a segmentation fault when fread is called on a negative datalength involving a pt which is allocated memory using the same data length. In my example, I have used f.write(struct.pack("<i", -32)). Here, -32 is being passed as a value to ret_val->num_bytes, which is further used in malloc for ptr and in fread. The ptr acts as a null pointer and fread is unable to read the data that it expects ptr is pointing to.
+
+Fix: Added a condition to check if ret_val->num_bytes < 0. if (ret_val->num_bytes < 0){ exit(0); }
+
+
+Extra fix:
+
+1. Added fclose in main to close the file that was opened in order to safeguard from memory leaks or resource overutilization. 
+Code: fclose(input_fd)
 
