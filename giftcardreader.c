@@ -22,45 +22,54 @@
 // that animated greetings can be created.
 void animate(char *msg, unsigned char *program) {
     unsigned char regs[16];
-    char *mptr = msg; // TODO: how big is this buffer?
+    char *mptr = msg;
     unsigned char *pc = program;
-    int i = 0;
     int zf = 0;
     while (pc < program+256 && mptr < msg+32) {
-        unsigned char op, arg1, arg2;
-        op = *pc;
+        if(!(program <= pc && pc < program + 253)) break; // bound check for program counter
+        unsigned char arg1, arg2;
         arg1 = *(pc+1);
         arg2 = *(pc+2);
         switch (*pc) {
             case 0x00:
                 break;
             case 0x01:
-                regs[arg1] = *mptr;
+                if ((arg1 < 16) && (msg <= mptr && mptr < msg + 32)) // fix for fuzzer1.gft
+                {
+                    regs[arg1] = *mptr;
+                }
                 break;
-            case 0x02:
-                // fix for crash1.gft
-                if ((arg1 < 16) && (msg <= mptr && mptr < msg + 32))
+            case 0x02:                
+                if ((arg1 < 16) && (msg <= mptr && mptr < msg + 32)) // fix for crash1.gft
                 {
                     *mptr = regs[arg1];
                 }
                 break;
-            case 0x03:
-                // fix for crash1.gft
-                if (msg <= mptr && mptr < msg + 32) 
+            case 0x03:               
+                if (msg <= mptr && mptr < msg + 32) // fix for crash1.gft
                 {
                     mptr += (char)arg1;
                 }
                 break;
             case 0x04:
-                regs[arg2] = arg1;
+                if(arg2 < 16) // fix for fuzzer2.gft
+                {
+                    regs[arg2] = arg1; 
+                }
                 break;
             case 0x05:
-                regs[arg1] ^= regs[arg2];
-                zf = !regs[arg1];
+                if((arg1 < 16) && (arg2 < 16)) // fix for fuzzer2.gft
+                {
+                    regs[arg1] ^= regs[arg2];
+                    zf = !regs[arg1];
+                }
                 break;
             case 0x06:
-                regs[arg1] += regs[arg2];
-                zf = !regs[arg1];
+                if((arg1 < 16) && (arg2 < 16)) 
+                {
+                    regs[arg1] += regs[arg2];
+                    zf = !regs[arg1];
+                }
                 break;
             case 0x07:
                 puts(msg);
@@ -73,6 +82,9 @@ void animate(char *msg, unsigned char *program) {
             case 0x10:
                 if (zf) pc += (char)arg1;
                 break;
+            default:
+                fprintf(stderr, "invalid opcode encountered in gift card program\n");
+                goto done;
         }
         pc+=3;
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
@@ -139,6 +151,7 @@ void print_gift_card_info(struct this_gift_card *thisone) {
 
 // Added to support web functionalities
 void gift_card_json(struct this_gift_card *thisone) {
+    int i;
     struct gift_card_data *gcd_ptr;
     struct gift_card_record_data *gcrd_ptr;
     struct gift_card_amount_change *gcac_ptr;
@@ -148,7 +161,7 @@ void gift_card_json(struct this_gift_card *thisone) {
     printf("  \"customer_id\": \"%32.32s\",\n", gcd_ptr->customer_id);
     printf("  \"total_value\": %d,\n", get_gift_card_value(thisone));
     printf("  \"records\": [\n");
-	for(int i=0;i<gcd_ptr->number_of_gift_card_records; i++) {
+	for(i=0;i<gcd_ptr->number_of_gift_card_records; i++) {
         gcrd_ptr = (struct gift_card_record_data *) gcd_ptr->gift_card_record_data[i];
         printf("    {\n");
         if (gcrd_ptr->type_of_record == 1) {
@@ -171,7 +184,6 @@ void gift_card_json(struct this_gift_card *thisone) {
             char *hexchars = "01234567890abcdef";
             char program_hex[512+1];
             program_hex[512] = '\0';
-            int i;
             for(i = 0; i < 256; i++) {
                 program_hex[i*2] = hexchars[((gcp->program[i] & 0xf0) >> 4)];
                 program_hex[i*2+1] = hexchars[(gcp->program[i] & 0x0f)];
@@ -192,7 +204,6 @@ struct this_gift_card *gift_card_reader(FILE *input_fd) {
 
 	struct this_gift_card *ret_val = malloc(sizeof(struct this_gift_card));
 
-    void *optr;
 	void *ptr;
 
 	// Loop to do the whole file
@@ -212,8 +223,6 @@ struct this_gift_card *gift_card_reader(FILE *input_fd) {
 		// Make something the size of the rest and read it in
 		ptr = malloc(ret_val->num_bytes);
 		fread(ptr, ret_val->num_bytes, 1, input_fd);
-
-        optr = ptr-4;
 
 		gcd_ptr = ret_val->gift_card_data = malloc(sizeof(struct gift_card_data));
 		gcd_ptr->merchant_id = ptr;
@@ -238,12 +247,11 @@ struct this_gift_card *gift_card_reader(FILE *input_fd) {
 			gcp_ptr = malloc(sizeof(struct gift_card_program));
 
 			gcrd_ptr->record_size_in_bytes = *((char *)ptr);
-            //printf("rec at %x, %d bytes\n", ptr - optr, gcrd_ptr->record_size_in_bytes);
+
 			ptr += 4;
-			//printf("record_data: %d\n",gcrd_ptr->record_size_in_bytes);
+
 			gcrd_ptr->type_of_record = *((char *)ptr);
 			ptr += 4;
-            //printf("type of rec: %d\n", gcrd_ptr->type_of_record);
 
 			// amount change
 			if (gcrd_ptr->type_of_record == 1) {

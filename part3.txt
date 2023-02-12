@@ -1,0 +1,21 @@
+fuzzer1.gft: Here, we get a segmentation fault due to the logic at 0x01 opcode. During debugging with gdb, initial part of the input program looked like -> \x03\xE2\x00\x02\x00\x00\x03\xE1\x00\x02\x00\x00\x03\xE1\x00\x02\x00\x00\x03\xE1\x00\x02\x00\x00\x03\xE1\x00\x02\x00\x00\x03\xE1\x00\x02\x00\x00\x03\xE1\xE5\x01\x20\x00 .....
+The problem comes when the set \x01\x20\x00 is executed. \x01 assigns the opcode as 0x01, x20 goes as an input to arg1 and x00 to arg2. In our code, we have defined functionality upto opcode 0x10 and can have at max 16 values in the regs array i.e. regs[16]. When arg1 = 0x20, it converts to 32, making the statement in 0x01 case as regs[32] = *mptr. As regs[32] doesnt exist and is invalid, the assignment doesnt succeed. When the code proceeds further and tries to retrieve the value of the assignment explained previously, it encounters a Segmentation Fault.
+
+Fix: To fix this, we include checks on arg1 and also on mptr. (arg1 < 16) && (msg <= mptr && mptr < msg + 32)
+This ensures that regs[arg1] remains valid as long as arg1 < 16 is within bounds.
+
+fuzzer2.gft: Here, the program hangs due to the logic at 0x04 and 0x05. During the debugging with gdb, initial part of the input program looked like -> 
+A\x2DAAAA\x04\x00AAA\x00\x03\xE1\x00\x02\x00\x00\x03\xE1\0x10\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x20\x05\x05\x20\x20\x05\x20\x20\x20\x20\x20 .....
+The problem comes when the set \x04\x00A is executed. \x04 assigns the opcode as 0x04, \x00 goes as an input to arg1 and A to arg2. In our code, we have defined functionality upto opcode 0x10 and can have at max 16 values in the regs array i.e. regs[16]. When arg1 = A, it converts to 65, making the statement as regs[65] = 0. As regs[65] doesnt exist and is invalid, the assignment doesnt succeed. When the code proceeds further and tries to retrieve the value of the assignment with 0x05 as opcode, it again repeats the problem. This then puts the code in a loop where it writes to non-existent regs values and then copies them.
+
+Fix: To fix this, checks are added at 0x04 and 0x05.
+0x04 -> if(arg2 < 16) // first layer of protection
+0x05 -> if((arg1 < 16) && (arg2 < 16)) // second layer of protection
+
+
+Bonus
+-----
+
+extra_fuzzer3.gft:
+
+Fix:
