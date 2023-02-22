@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, Client
 from LegacySite.models import Card
 
 # Create your tests here.
@@ -17,3 +17,15 @@ class MyTest(TestCase):
     def test_get_card(self):
         allcards = Card.objects.all()
         self.assertNotEqual(len(allcards), 0)
+
+    def test_xss(self):
+        payload = '<script>alert("hello")</script>' 
+        encoded_payload = '&lt;script&gt;alert(&quot;hello&quot;)&lt;/script&gt;'    
+        response_xss = self.client.get('/buy.html', {'director': payload})
+        self.assertContains(response_xss, encoded_payload)
+
+    def test_xsrf(self):
+        self.client = Client(enforce_csrf_checks=True)
+        resp_xsrf = self.client.post('/gift/0', {'amount': '1', 'username': 'test2'})
+        self.assertEqual(resp_xsrf.status_code, 403)
+

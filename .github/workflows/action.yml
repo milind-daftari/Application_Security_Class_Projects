@@ -1,0 +1,12 @@
+# Homework 2 Part 1: Github Action to execute make and make tests
+name: 'tests'
+on: [push]
+jobs:
+  make:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run tests
+        run: python manage.py tests
