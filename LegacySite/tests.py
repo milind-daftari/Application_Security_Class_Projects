@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from LegacySite.models import Card
-
+from LegacySite.extras import parse_card_data
+import json
+from shlex import quote
 # Create your tests here.
 
 class MyTest(TestCase):
@@ -29,3 +31,18 @@ class MyTest(TestCase):
         resp_xsrf = self.client.post('/gift/0', {'amount': '1', 'username': 'test2'})
         self.assertEqual(resp_xsrf.status_code, 403)
 
+    def test_sqli(self):
+        giftcard = open('part1/sqli.gftcrd')
+        giftcard_path = f'./tmp/sqli.gftcrd'
+        parsed_data = parse_card_data(giftcard.read(), giftcard_path)
+
+        signature = json.loads(parsed_data)['records'][0]['signature']
+        card_query = Card.objects.raw('select id from LegacySite_card where data = %s', [signature])
+
+        self.assertEqual(len(card_query), 0)
+
+    def test_cmdi(self):
+        filename = '  & echo "hello" ; '
+        input_command = 'echo 1' + filename
+        quoted_input_command = quote(input_command)
+        self.assertNotEqual(quoted_input_command, input_command)

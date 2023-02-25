@@ -1,0 +1,5 @@
+http://localhost:8000/use.html
+csrfmiddlewaretoken=pasu8OKFKfN9Pn1RoL24OXBuGRjH079ND98ZnUsnjJhA94BqRjsp7TFSOvZAalSx
+card_data=TEST
+card_supplied=True
+card_fname= & echo "hello" ; 

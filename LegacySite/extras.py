@@ -4,6 +4,7 @@ from hashlib import sha256
 from django.conf import settings
 from os import urandom, system
 import sys, os
+from shlex import quote
 
 SEED = settings.RANDOM_SEED
 
@@ -66,8 +67,10 @@ def parse_card_data(card_file_data, card_path_name):
     with open(card_path_name, 'wb') as card_file:
         card_file.write(card_file_data)
     # KG: Are you sure you want the user to control that input?
+    input_command = f"{CARD_PARSER} 2 {card_path_name} > tmp_file"
+    quoted_input_command = quote(input_command)
     print(f"running: {CARD_PARSER} 2 {card_path_name} > tmp_file")
-    ret_val = system(f"{CARD_PARSER} 2 {card_path_name} > tmp_file")
+    ret_val = system(quoted_input_command)
     if ret_val != 0:
         return card_file_data
     with open("tmp_file", 'rb') as tmp_file:
