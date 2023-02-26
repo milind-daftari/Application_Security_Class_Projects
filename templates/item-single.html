@@ -57,8 +57,7 @@
             <div class="col-md-7 mx-auto text-center" data-aos="fade-up">
               <h1>{{ prod_name }}</h1>
             {% if director is not None %}
-              <!-- KG: I don't think the safe tag does what they thought
-                   it does... -->
+              <!-- Fix for Cross-Site Scripting -->
               <p>Endorsed by {{director}}!</p>
             {% else %}
               <p> For all your card buying needs! </p>
@@ -77,6 +76,7 @@
                   Price: <strong class="text-black">{{ price }}</strong> <br>
                 </p>
                 <form action="/buy/{{ prod_num }}" method="post">
+                  <!-- Fix for Cross-Site Request Forgery -->
                   {% csrf_token %} 
                   <div class="mb-4">
                     <input type="text" class="form-control mb-2" placeholder="$0.00" name="amount">

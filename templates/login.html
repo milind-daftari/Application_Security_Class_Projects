@@ -76,6 +76,7 @@
               <div class="row">
                 <div class="col-md-12 form-group">
                   <form action="/login.html" method="POST">
+                    <!-- Fix for Cross-Site Request Forgery -->
                     {% csrf_token %} 
                   <label for="uname">Username/Email</label>
                   <input type="username" id="uname" name="uname" class="form-control form-control-lg">
@@ -94,7 +95,6 @@
                   <input type="submit" value="Login" class="btn btn-primary btn-lg px-5">
                 </div>
               </div>
-              {% csrf_token %}
               </form>
             </div>
           </div>

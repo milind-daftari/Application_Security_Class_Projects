@@ -17,7 +17,7 @@ def index(request):
     context= {'user': request.user}
     return render(request, "index.html", context)
 
-@csrf_protect
+@csrf_protect # Fix for Cross-Site Request Forgery
 # Register for the service.
 def register_view(request):
     if request.method == 'GET':
@@ -38,7 +38,7 @@ def register_view(request):
         u.save()
         return redirect("index.html")
         
-@csrf_protect
+@csrf_protect # Fix for Cross-Site Request Forgery
 # Log into the service.
 def login_view(request):
     if request.method == "GET":
@@ -58,14 +58,14 @@ def login_view(request):
             return render(request, "login.html", context)
         return redirect("index.html")
 
-@csrf_protect
+@csrf_protect # Fix for Cross-Site Request Forgery
 # Log out of the service.
 def logout_view(request):
     if request.user.is_authenticated:
         logout(request)
     return redirect("index.html")
 
-@csrf_protect
+@csrf_protect # Fix for Cross-Site Request Forgery
 def buy_card_view(request, prod_num=0):
     if request.method == 'GET':
         context = {"prod_num" : prod_num}
@@ -114,8 +114,7 @@ def buy_card_view(request, prod_num=0):
     else:
         return redirect("/buy/1")
 
-# KG: What stops an attacker from making me buy a card for him?
-@csrf_protect
+@csrf_protect # Fix for Cross-Site Request Forgery
 def gift_card_view(request, prod_num=0):
     context = {"prod_num" : prod_num}
     if request.method == "GET" and 'username' not in request.GET:
@@ -141,7 +140,6 @@ def gift_card_view(request, prod_num=0):
         context['price'] = prod.recommended_price
         context['description'] = prod.description
         return render(request, "gift.html", context)
-    # Hack: older partner sites only support GET, so special case this.
     elif request.method == "POST" \
         or request.method == "GET" and 'username' in request.GET:
         if not request.user.is_authenticated:
@@ -151,7 +149,7 @@ def gift_card_view(request, prod_num=0):
         user = request.POST.get('username', None) 
         amount = request.POST.get('amount', None)
         if user is None:
-            return redirect("/login.html")
+            return redirect("/index.html")
         try:
             user_account = User.objects.get(username=user)
         except:
@@ -182,7 +180,7 @@ def gift_card_view(request, prod_num=0):
         card_file.close()
         return render(request, f"gift.html", context)
 
-@csrf_protect
+@csrf_protect # Fix for Cross-Site Request Forgery
 def use_card_view(request):
     context = {'card_found':None}
     if request.method == 'GET':
@@ -206,13 +204,9 @@ def use_card_view(request):
         else:
             card_file_path = os.path.join(tempfile.gettempdir(), f'{card_fname}_{request.user.id}_parser.gftcrd')
         card_data = extras.parse_card_data(card_file_data.read(), card_file_path)
-        # check if we know about card.
-        # KG: Where is this data coming from? RAW SQL usage with unkown
-        # KG: data seems dangerous.
         print(card_data.strip())
         signature = json.loads(card_data)['records'][0]['signature']
-        # signatures should be pretty unique, right?
-        card_query = Card.objects.raw('select id from LegacySite_card where data = %s', [signature])
+        card_query = Card.objects.raw('select id from LegacySite_card where data = %s', [signature]) # Fix for SQL Injection
         user_cards = Card.objects.raw('select id, count(*) as count from LegacySite_card where LegacySite_card.user_id = %s', [str(request.user.id)])
         card_query_string = ""
         print("Found %s cards" % len(card_query))

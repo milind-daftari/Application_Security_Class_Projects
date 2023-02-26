@@ -44,9 +44,10 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    # Fix for Cross-Site Request Forgery
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -148,6 +149,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 # ShoddyCorp note: hack to get around stupid browser restrictions.
 # Fixes issue with Chrome not allowing partner sites to access the site.
 SESSION_COOKIE_SAMESITE = 'Lax'
-# Don't know if this is necessary but all this stupid security stuff just
-# makes my job harder
-SESSION_COOKIE_HTTPONLY = False
+# Provides protection against Cross-Site Scripting attacks
+SESSION_COOKIE_HTTPONLY = True
