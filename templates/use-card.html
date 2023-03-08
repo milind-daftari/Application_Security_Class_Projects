@@ -91,8 +91,6 @@
                           <span> {{card_item.product.description }}</span>
                         </div>
                         <form action="/use.html" method="post">
-                          <!-- Fix for Cross-Site Request Forgery -->
-                          {% csrf_token %} 
                         <input type="hidden" name="card_id" id="card_id" value="{{ card_item.id }}"/>
                         
                         <button class="btn btn-bid" type="submit">Use This Card</button>
@@ -114,8 +112,6 @@
                           <span class="ml-auto">This card can be for any price.</span>
                         </div>
                         <form method="post" enctype="multipart/form-data">
-                          <!-- Fix for Cross-Site Request Forgery -->
-                          {% csrf_token %}
                         <input type="file" name="card_data">
                         <input type="hidden" name="card_supplied" id="card_supplied" value="True"/>
                         <input type="test" name="card_fname" id="card_fname" placeholder="NameYourCard">

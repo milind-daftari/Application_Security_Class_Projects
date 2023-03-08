@@ -38,7 +38,6 @@ def register_view(request):
         u.save()
         return redirect("index.html")
         
-@csrf_protect # Fix for Cross-Site Request Forgery
 # Log into the service.
 def login_view(request):
     if request.method == "GET":
@@ -180,7 +179,6 @@ def gift_card_view(request, prod_num=0):
         card_file.close()
         return render(request, f"gift.html", context)
 
-@csrf_protect # Fix for Cross-Site Request Forgery
 def use_card_view(request):
     context = {'card_found':None}
     if request.method == 'GET':
@@ -199,7 +197,7 @@ def use_card_view(request):
         # Need to write this to parse card type.
         card_file_data = request.FILES['card_data']
         card_fname = request.POST.get('card_fname', None)
-        if card_fname is None or card_fname == '':
+        if card_fname is None or card_fname == '' or (not(card_fname.isalnum())) : # Fix for Command Injection
             card_file_path = os.path.join(tempfile.gettempdir(), f'newcard_{request.user.id}_parser.gftcrd')
         else:
             card_file_path = os.path.join(tempfile.gettempdir(), f'{card_fname}_{request.user.id}_parser.gftcrd')

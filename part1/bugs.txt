@@ -65,4 +65,4 @@ Payload:  & echo "hello" ;
 
 How to Reproduce: Navigate to use_html and try to upload a card to use. The JSON inside the gift card should be invalid, so that the execution comes out of the try except block and enters the code execution section. As soon as that happens, the payload which is supplied as the file name, alters the code to be executed such that echo "hello" runs together with the giftcardreader_linux 2 command set due to the '&'. After that, the next code relies on echo "hello" to complete due to the ';'. This results in execution of echo "hello" on the server.
 
-Fix: We use Simple lexical analysis library to fix this. From shlex, we import quote() function which return a shell-escaped version of the input. The returned value is a string that can safely be used as one token in a shell command line.
+Fix: If the supplied card_fname doesnt contain alphanumeric characters, a static name is given to the card which depends on the user id and not the supplied name, therefore, the payload never reaches the execution line.
