@@ -37,7 +37,7 @@ class MyTest(TestCase):
     def test_sqli(self):
         self.client = Client()
         self.client.login(username='test', password='test')
-        with open('part1/sqli.gftcrd') as giftcard:
+        with open('part1/sqli.gftcrd','rb') as giftcard:
             resp_sqli = self.client.post('/use.html',{'card_supplied': 'True', 'card_data': giftcard})
             self.assertEqual(resp_sqli.context.get('card_found', None), None)
 
@@ -45,7 +45,7 @@ class MyTest(TestCase):
         fname = ' & touch testFile.txt ; '
         self.client = Client()
         self.client.login(username='test', password='test')
-        with open('part1/cmdiTest.gftcrd') as giftcard:
+        with open('part1/cmdiTest.gftcrd','rb') as giftcard:
             try:
                 resp_cmdi = self.client.post('/use.html',{'card_supplied': 'True', 'card_fname': fname, 'card_data': giftcard})
             except:
