@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from LegacySite.models import User, Product, Card
 from . import extras
 from django.views.decorators.csrf import csrf_protect as csrf_protect
+from django.views.decorators.csrf import csrf_exempt as csrf_exempt
 from django.contrib.auth import login, authenticate, logout
 from django.core.exceptions import ObjectDoesNotExist
 import os, tempfile
@@ -17,7 +18,7 @@ def index(request):
     context= {'user': request.user}
     return render(request, "index.html", context)
 
-@csrf_protect # Fix for Cross-Site Request Forgery
+@csrf_exempt
 # Register for the service.
 def register_view(request):
     if request.method == 'GET':
@@ -38,6 +39,7 @@ def register_view(request):
         u.save()
         return redirect("index.html")
         
+@csrf_exempt
 # Log into the service.
 def login_view(request):
     if request.method == "GET":
@@ -57,7 +59,7 @@ def login_view(request):
             return render(request, "login.html", context)
         return redirect("index.html")
 
-@csrf_protect # Fix for Cross-Site Request Forgery
+@csrf_exempt
 # Log out of the service.
 def logout_view(request):
     if request.user.is_authenticated:
@@ -179,6 +181,7 @@ def gift_card_view(request, prod_num=0):
         card_file.close()
         return render(request, f"gift.html", context)
 
+@csrf_exempt
 def use_card_view(request):
     context = {'card_found':None}
     if request.method == 'GET':
