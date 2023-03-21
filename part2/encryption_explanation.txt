@@ -1,0 +1,42 @@
+Encryption Recipe: Fernet
+
+Key Management: I am using Fernet to implement encryption of my data stored in the database. To do so, I am utilizing the MultiFernet Class to implement Key Rotation for Fernet. It takes in a list of valid Fernet Keys specified in keys.py. MultiFernet performs all encryption options using the first key in the list provided. MultiFernet attempts to decrypt tokens with each key in turn. A cryptography.fernet.InvalidToken exception is raised if the correct key is not found in the list provided. Key rotation makes it easy to replace old keys. You can add your new key at the front of the list to start encrypting new messages, and remove old keys as they are no longer needed.
+
+Reason for the Key Management Approach Selected: This approach was selected due to the flexibility offered by MultiFernet class. It allows to incorporate the use of multiple keys, and makes key revocation simpler. I keep all the keys, old and new ones, in keys.py. This acts as a secure key store which usually will not be pushed to github or any code repository online and will sit on the application server as a restricted configuration file. For purpose of this assignment, I will be pushing it to github so that the complete clean state can be replicated on other machines for the purpose of testing. To improve upon key management, depending on the deployment model used, alternatives like Azure Key Vault or AWS Key Management Service can be used. The keys can be stored within environment variables too.
+
+Assumptions: Following are few assumptions -
+
+1. keys.py is not accessible to unauthorized users and applications.
+
+2. The scale at the which the application operates is small.
+
+3. The card data is of small length.
+
+4. Keys will be different for each production deployment and would be stored with a key management service so that they can be retrieved in case of emergency.
+
+5. The key is updated at regular intervals of time.
+
+Problems Encountered during Implementation along with Solutions: Multiple problems were encountered during the implementation of encryption, such as:
+
+1. "use_card_view" stopped working. The reason for this was that the use_card_view function was unable to read the match the data present in the database as that data was encrypted. So, I modified the "use_card_view" function to handle working with encrypted data by adding, modifying and updating the helper functions such as generate_card_file_path, parse_card_data and hash_card_file_data.
+
+2. A card could be reused multiple times. To fix this, I added code to verify if the card had already been used previously or not. If the card being uploaded had not been previously used, we would get a ObjectDoesNotExist exception under which the card would get usde and it's attribute "used" would be marked as True. If the card had been used previously, we return Error 400: Card Re-used to the user. if the card already present in the UI had not been previously used, we would use it and mark it's "used" attribute as True.
+
+3. In the Card model, data was defined as a BinaryField. For incorporation of encryption and for it to work seamlessly with my logic, this had to be converted into a CharField so that it would accept the encrypted data.
+
+4. I had to be sure that the keys generated were correct and also that I could provide a utility to generate and validate the keys. So, I created fernetoperations.py. It contains two functions, "generate_fernet_key" and "is_fernet_key_valid". "generate_fernet_key" helps to generate a new fernet key. "is_fernet_key_valid" helps to check if the key provided is a fernet key or not.
+
+5. After completing the code changes, I noticed irregularities as the database was inconsistent. Some part of it was in plain-text and the other was encrypted. To resolve that, I dumped the previous database and fixtures.json and rebuild a database and fixtures file using the steps below:
+    a. python manage.py makemigrations LegacySite
+    b. python manage.py migrate
+    c. bash import_dbs.sh
+    d. Run the application and do the following:
+        i)   Add two users: test and test2.
+        ii}  LogIn as test and Buy a Card. After that use the card.
+        iii) Buy another card and gift it to test2. Verify the operation by logging in as test2.
+        iv)  Upload a card for use.
+    e. python manage.py dumpdata > LegacySite/fixtures/testdata.json
+
+6. Some previously written test cases stopped working, so I updated them as per the latest changes so that they can work with the encrypted scheme implemented.
+
+Note: To be sure the all the functionality is working, I added multiple tests in tests.py.

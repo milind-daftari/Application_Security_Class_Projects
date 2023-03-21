@@ -7,7 +7,7 @@ from . import extras
 from django.views.decorators.csrf import csrf_protect as csrf_protect
 from django.views.decorators.csrf import csrf_exempt as csrf_exempt
 from django.contrib.auth import login, authenticate, logout
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
 import os, tempfile
 
 SALT_LEN = 16
@@ -105,13 +105,14 @@ def buy_card_view(request, prod_num=0):
             amount = prod.recommended_price
         extras.write_card_data(card_file_path, prod, amount, request.user)
         card_file = open(card_file_path, 'rb')
-        card = Card(data=card_file.read(), product=prod, amount=amount, fp=card_file_path, user=request.user)
+        card_signature = card_file.read()
+        # print("Card Signature: ", card_signature)
+        card = Card(data=card_signature, product=prod, amount=amount, fp=card_file_path, user=request.user)
         card.save()
         card_file.seek(0)
         response = HttpResponse(card_file, content_type="application/octet-stream")
         response['Content-Disposition'] = f"attachment; filename={card_file_name}"
         return response
-        #return render(request, "item-single.html", {})
     else:
         return redirect("/buy/1")
 
@@ -199,45 +200,38 @@ def use_card_view(request):
         context['card_list'] = None
         # Need to write this to parse card type.
         card_file_data = request.FILES['card_data']
+        card_f_data = card_file_data.read()
         card_fname = request.POST.get('card_fname', None)
-        if card_fname is None or card_fname == '' or (not(card_fname.isalnum())) : # Fix for Command Injection
-            card_file_path = os.path.join(tempfile.gettempdir(), f'newcard_{request.user.id}_parser.gftcrd')
-        else:
-            card_file_path = os.path.join(tempfile.gettempdir(), f'{card_fname}_{request.user.id}_parser.gftcrd')
-        card_data = extras.parse_card_data(card_file_data.read(), card_file_path)
-        print(card_data.strip())
-        signature = json.loads(card_data)['records'][0]['signature']
-        card_query = Card.objects.raw('select id from LegacySite_card where data = %s', [signature]) # Fix for SQL Injection
-        user_cards = Card.objects.raw('select id, count(*) as count from LegacySite_card where LegacySite_card.user_id = %s', [str(request.user.id)])
-        card_query_string = ""
-        print("Found %s cards" % len(card_query))
-        for thing in card_query:
-            # print cards as strings
-            card_query_string += str(thing) + '\n'
-        if len(card_query) == 0:
-            # card not known, add it.
-            if card_fname is not None:
-                card_file_path = os.path.join(tempfile.gettempdir(), f'{card_fname}_{request.user.id}_{user_cards[0].count + 1}.gftcrd')
+        card_file_path = extras.generate_card_file_path(card_fname, request.user.id, tempfile.gettempdir())
+        parsed_card_data = extras.parse_card_data(card_f_data, card_file_path)
+        if parsed_card_data is None:
+            return HttpResponse("Error 400: Invalid Card")
+        card_data = json.loads(parsed_card_data.encode())
+        signature = card_f_data
+        try:
+            user_cards = Card.objects.filter(user=request.user.id).count()
+            card = Card.objects.get(data=signature)
+            if card.used:
+                return HttpResponse("Error 400: Card Re-used")
             else:
-                card_file_path = os.path.join(tempfile.gettempdir(), f'newcard_{request.user.id}_{user_cards[0].count + 1}.gftcrd')
-            fp = open(card_file_path, 'wb')
-            fp.write(card_data)
-            fp.close()
-            card = Card(data=card_data, fp=card_file_path, user=request.user, used=True)
-        else:
-            context['card_found'] = card_query_string
-            try:
-                card = Card.objects.get(data=card_data)
+                context['card_found'] = card.data
                 card.used = True
                 card.save()
-            except ObjectDoesNotExist:
-                print("No card found with data =", card_data)
-                card = None
-        context['card'] = card
-        return render(request, "use-card.html", context) 
+                context['card'] = card
+        except ObjectDoesNotExist:
+            card_file_path = extras.generate_card_file_path(card_fname, request.user.id, tempfile.gettempdir(), user_cards + 1)
+            with open(card_file_path, 'wb') as fp:
+                fp.write(json.dumps(card_data).encode('utf-8')) # added encoding
+            card = Card(data=card_data, fp=card_file_path, product=Product.objects.get(product_id=1) , amount=0, user=request.user, used=True)
+            card.save()
+            context['card'] = card
+        except MultipleObjectsReturned:
+            return HttpResponse("Error 400: Internal Server Error")
+        return render(request, "use-card.html", context)
     elif request.method == "POST":
-        card = Card.objects.get(id=request.POST.get('card_id', None))
-        card.used=True
+        card_id = request.POST.get('card_id', None)
+        card = Card.objects.get(id=card_id)
+        card.used = True
         card.save()
         context['card'] = card
         try:

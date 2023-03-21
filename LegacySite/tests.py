@@ -1,7 +1,10 @@
+from django.db import IntegrityError
 from django.test import TestCase, Client
+from django.contrib.auth.models import User
 from LegacySite.models import Card
-import json
+from LegacySite.views import login_view, logout_view, buy_card_view, gift_card_view, use_card_view
 import os
+from . import extras
 # Create your tests here.
 
 class MyTest(TestCase):
@@ -39,7 +42,7 @@ class MyTest(TestCase):
         self.client.login(username='test', password='test')
         with open('part1/sqli.gftcrd','rb') as giftcard:
             resp_sqli = self.client.post('/use.html',{'card_supplied': 'True', 'card_data': giftcard})
-            self.assertEqual(resp_sqli.context.get('card_found', None), None)
+            assert b'Error 400: Invalid Card' in resp_sqli.content
 
     def test_cmdi(self):
         fname = ' & touch testFile.txt ; '
@@ -51,3 +54,59 @@ class MyTest(TestCase):
             except:
                 pass    
             self.assertFalse(os.path.exists('testFile.txt'))
+
+    # Functionality tests: After adding encryption
+
+    def test_login(self):
+        self.client = Client()
+        resp_login = self.client.login(username='test', password='test')
+        self.assertEqual(resp_login, True)
+    
+    def test_logout(self):
+        self.client = Client()
+        resp_login = self.client.login(username='test', password='test')
+        resp_rqst1 = self.client.get('/index.html')
+        self.assertContains(resp_rqst1, "Sign Out")
+        self.client.logout()
+        resp_rqst2 = self.client.get('/index.html')
+        self.assertContains(resp_rqst2, "Sign In")
+    
+    def test_buy(self):
+        self.client = Client()
+        self.client.login(username="test", password="test")
+        resp_buy = self.client.post('/buy/1', data={'amount': '10'})
+        self.assertEqual(resp_buy.status_code, 200)
+        self.assertTrue(resp_buy['Content-Disposition'].startswith("attachment; filename=newcard.gftcrd"))
+
+    def test_gift(self):
+        self.client = Client()
+        self.client.login(username="test", password="test")
+        resp_gift = self.client.post('/gift/1', data={'username': 'test2', 'amount': '10'})
+        self.assertEqual(resp_gift.status_code, 200)
+        self.assertContains(resp_gift, "test2")
+
+    def test_use_valid(self):
+        self.client = Client()
+        self.client.login(username="test", password="test")
+        with open('part2/valid_test_card.gftcrd','rb') as giftcard:
+            resp_use = self.client.post('/use',{'card_supplied': 'True', 'card_data': giftcard})
+            self.assertContains(resp_use, "Card used!")
+
+    def test_use_reuse(self):
+        self.client = Client()
+        self.client.login(username="test", password="test")
+        with open('part2/used_test_card.gftcrd','rb') as giftcard1:
+            resp_use = self.client.post('/use', {'card_supplied': 'True', 'card_data': giftcard1})
+        try:
+            with open('part2/used_test_card.gftcrd','rb') as giftcard2:
+                resp_reuse = self.client.post('/use', {'card_supplied': 'True', 'card_data': giftcard2})
+        except IntegrityError:
+            self.assertTrue(True)
+
+
+    def test_encryption_decryption(self):
+        input_to_encrypt = "This is a test input."
+        encrypted_data = extras.encrypt_card_file_data(input_to_encrypt)
+        decrypted_data = extras.decrypt_card_file_data(encrypted_data)
+        self.assertEqual(input_to_encrypt, decrypted_data)
+    
