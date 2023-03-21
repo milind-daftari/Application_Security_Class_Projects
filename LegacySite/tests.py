@@ -1,7 +1,8 @@
+import io
 from django.db import IntegrityError
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
-from LegacySite.models import Card
+from LegacySite.models import Card, User
 from LegacySite.views import login_view, logout_view, buy_card_view, gift_card_view, use_card_view
 import os
 from . import extras
@@ -109,4 +110,24 @@ class MyTest(TestCase):
         encrypted_data = extras.encrypt_card_file_data(input_to_encrypt)
         decrypted_data = extras.decrypt_card_file_data(encrypted_data)
         self.assertEqual(input_to_encrypt, decrypted_data)
+    
+    def test_buy_and_use(self):
+        client = Client()
+        client.login(username="test", password="test")
+        user = User.objects.get(username="test")
+        response = client.post('/buy/4', {'amount': 1337})
+        self.assertEqual(response.status_code, 200)
+        # Get the card that was returned
+        card = Card.objects.filter(user=user.pk).order_by('-id')[0]
+        card_data = response.content
+        response = client.post('/use.html',
+            {
+                'card_supplied': 'True',
+                'card_fname': 'Test',
+                'card_data': io.BytesIO(card_data),
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b'Card used!', response.content)
+        self.assertTrue(Card.objects.get(pk=card.id).used)
     
