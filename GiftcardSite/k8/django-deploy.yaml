@@ -21,16 +21,34 @@ spec:
             - containerPort: 8000
           env:
             - name: MYSQL_ROOT_PASSWORD
-              value: thisisatestthing. 
+              valueFrom:
+                 secretKeyRef:
+                  name: assignment3-django-secrets
+                  key: MYSQL_ROOT_PASSWORD
 
             - name: MYSQL_DB
-              value: GiftcardSiteDB
+              valueFrom:
+                 secretKeyRef:
+                  name: assignment3-django-secrets
+                  key: MYSQL_DB
 
             - name: MYSQL_HOST
               value: mysql-service
 
             - name: ALLOWED_HOSTS
               value: "*,"
+
+            - name: MYSQL_USERNAME
+              valueFrom:
+                 secretKeyRef:
+                  name: assignment3-django-secrets
+                  key: MYSQL_USERNAME
+              
+            - name: SECRET_KEY
+              valueFrom:
+                 secretKeyRef:
+                  name: assignment3-django-secrets
+                  key: SECRET_KEY
 
           volumeMounts:
             - name: mysql-volume-mount
