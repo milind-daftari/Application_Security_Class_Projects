@@ -1,0 +1,12 @@
+Part 2.1: Remove unwanted monitoring
+
+Here, I removed the piece of code which was collecting passwords and storing how many times a password was used.
+
+Code-
+        # KG: Uh... I'm not sure this makes sense.
+        # Collect data to ensure good password use.
+        if pword not in graphs.keys():
+            graphs[pword] = Counter(f'counter_{pword}', 'The total number of '\
+              + f'times {pword} was used') # Check
+        graphs[pword].inc() # Check
+
