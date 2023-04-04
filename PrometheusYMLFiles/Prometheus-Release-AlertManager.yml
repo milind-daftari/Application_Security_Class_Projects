@@ -1,0 +1,33 @@
+# Please edit the object below. Lines beginning with a '#' will be ignored,
+# and an empty file will abort the edit. If an error occurs while saving this file will be
+# reopened with the relevant failures.
+#
+apiVersion: v1
+data:
+  alertmanager.yml: |
+    global: {}
+    receivers:
+    - name: default-receiver
+    route:
+      group_interval: 5m
+      group_wait: 10s
+      receiver: default-receiver
+      repeat_interval: 3h
+    templates:
+    - /etc/alertmanager/*.tmpl
+kind: ConfigMap
+metadata:
+  annotations:
+    meta.helm.sh/release-name: prom-release
+    meta.helm.sh/release-namespace: default
+  creationTimestamp: "2023-04-04T23:16:32Z"
+  labels:
+    app.kubernetes.io/instance: prom-release
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/version: v0.25.0
+    helm.sh/chart: alertmanager-0.24.1
+  name: prom-release-alertmanager
+  namespace: default
+  resourceVersion: "730"
+  uid: cae8c278-8f43-4f7d-b168-c2a922f42e44
