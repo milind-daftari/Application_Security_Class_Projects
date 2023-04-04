@@ -10,3 +10,15 @@ Code-
               + f'times {pword} was used') # Check
         graphs[pword].inc() # Check
 
+Part 2.2: Expand reasonable monitoring
+
+Here, I first created a counter using the below given code:
+
+graphs['database_error_return_404'] = Counter('python_request_db_error', 'The total number'\
++ ' of database errors returning 404.')
+
+After initializing, I added the following before every line a 404 error was returned in view.py .
+
+graphs['database_error_return_404'].inc()
+
+This would increment the counter whenever a database error returning 404 occurs.
