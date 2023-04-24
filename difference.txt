@@ -1,0 +1,32 @@
+1. What are the two types of Intents?
+
+The two types of Intents are Implicit Intent and Explicit Intent.
+Implicit intents do not name a specific component, but instead declare a general action to perform, which allows a component from another app to handle it. SecondFragment.kt uses Implicit Intent because a specific android component is not specified and a general action (ACTION_VIEW) is declared.
+Explicit intents are used when you know the exact component (the target class) you want to start or communicate with. In this case, you specify the target component directly by its class name. ThirdFragment.kt uses Explicit Intent because an exact component (the target class) is declared (ProductScrollingActivity::class.java).
+
+2. Which of the two types of Intents is (generally) more secure?
+
+Explicit Intent is generally more secure than Implicit intent because explicit intent directly specifies the exact component that will handle the intent. This ensures that only the intended component receives and processes the intent, which reduces the risk of unauthorized components intercepting the intent and potentially accessing sensitive data or executing malicious actions.
+
+3. What type of Intent is shown on lines 69 to 73 of SecondFragment.kt?
+
+Implicit Intent
+
+4. What type of Intent is shown on lines 68 to 70 of ThirdFragment.kt?
+
+Explicit Intent
+
+5. Which of these two Intents is the proper way to do an Intent?
+
+Explicit Intent as used in ThirdFragment.kt.
+
+---Change---
+
+As "SecondFragment.kt" uses Implicit intent, which is not too secure, we will modify the code such that it utilizes an explicit intent.
+We changed the code:
+
+var intent = Intent(activity, ProductScrollingActivity::class.java)
+intent.putExtra("User", loggedInUser);
+startActivity(intent)
+
+Here, I used ProductScrollingActivity because it was the only activity in which text/giftcards_browse MIMEType was defined.
