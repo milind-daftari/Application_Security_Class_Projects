@@ -1,0 +1,45 @@
+Part 2.1: Remove unwanted monitoring
+
+Here, I removed the piece of code which was collecting passwords and storing how many times a password was used.
+
+Code-
+        # KG: Uh... I'm not sure this makes sense.
+        # Collect data to ensure good password use.
+        if pword not in graphs.keys():
+            graphs[pword] = Counter(f'counter_{pword}', 'The total number of '\
+              + f'times {pword} was used') # Check
+        graphs[pword].inc() # Check
+
+Part 2.2: Expand reasonable monitoring
+
+Here, I first created a counter using the below given code:
+
+    graphs['database_error_return_404'] = Counter('python_request_db_error', 'The total number'\
+    + ' of database errors returning 404.')
+
+After initializing, I added the following before every line a 404 error was returned in view.py .
+
+    graphs['database_error_return_404'].inc()
+
+This would increment the counter whenever a database error returning 404 occurs.
+
+Part 2.3: Add Prometheus
+
+Steps:
+1. Download helm for Windows at https://get.helm.sh/helm-canary-windows-amd64.zip .
+2. Unzip it and enter the directory.
+3. Run the following to add the prometheus helm charts -> .\helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+4. Update the heml repo -> .\helm repo update
+5. Install Prometheus with two steps ->  
+    .\helm install prom-release prometheus-community/prometheus
+    .\helm install prometheus-community/prometheus --generate-name  
+6. In the assignment repository terminal, run kubectl get configmaps to get the config maps.
+7. You should be able to see the prometheus instances there such as alertmanager and server.
+8. Edit the configuration of the release server by running "kubectl edit configmap prom-release-prometheus-server".
+This will open the yml file. Update the targets from localhost:9090 to proxy-server:8080 so that you application is mapped.
+scrape_configs:
+    - job_name: prometheus
+      static_configs:
+      - targets:
+        - proxy-service:8080
+9. Run you application and raise DB errors by looking for /buy/1000. This will cause the database_error_return_404 to increment. You can view the metrics of all counters at /metrics.
