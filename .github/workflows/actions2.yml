@@ -1,0 +1,33 @@
+# Homework 2 Part 1: Github Action to run tests
+name: 'tests'
+on: [push]
+jobs:
+  make:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python3
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+          
+      - name: Install requirements
+        run: pip install -r requirements.txt
+      
+      - name: Make migrations
+        run: python manage.py makemigrations LegacySite
+
+      - name: Migrate database
+        run: python manage.py migrate
+
+      - name: Import DBs
+        run: bash import_dbs.sh
+      
+      - name: Run tests
+        run: python manage.py test
