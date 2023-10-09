@@ -1,0 +1,20 @@
+Reason:
+
+The vulnerability is possibly due to the lack of proper authorization verification on the server-side when the "useCard" method is called. The android application sends a "PUT" request with the card number via the API endpoint "/api/use/{card_number}" and the user's token in the "Authorization" header. The authentication check is performed on the server-side, which validates the token to ensure the user is authenticated, but no verification or validation is done to check if the authenticated user is the actual owner of the specified gift card and that they are authorized to use it.
+
+This can be seen in the below codes:
+1. UseCard.kt: client.useCard(card?.id, token)?.enqueue(object : Callback<Card?> {....}
+2. CardInterface.kt:
+    @PUT("/api/use/{card_number}")
+    fun useCard(@Path("card_number") card_number: Int?, @Header("Authorization") authHeader: String): Call<Card?>
+
+Fix:
+
+To fix this, the first step will be to make changes in the server side code so that it does the following:
+1. When a card is bought, it should be bound to the user who bought it.
+2. When a card is gifted, the ownership should be transferred and the card should be bound to the new user.
+3. When a request is sent from the client side, the server should first perform an authentication check, followed by an authorization check which verifies the ownership of the card.
+
+Bonus:
+The token is always same for the same user, which itself is not a safe practice.
+The token generated for a user should expire after a set interval of time and a new token should be generated, so that no one can reuse the old token and send forged requests.
