@@ -1,15 +1,19 @@
 # Homework 1 Part 2: Github Action to execute make and make tests
 name: 'make'
-on: [push]
+on:
+  push:
+    paths:
+      - 'AppSec-Project-1/**'
 jobs:
-  make:
+  make_job:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
-
       - name: execute make
-        run: make
-
+        run: |
+          cd AppSec-Project-1
+          make
       - name: execute make test
-        run: make test
+        run: |
+          cd AppSec-Project-1
+          make test
