@@ -113,12 +113,6 @@ To create your own test files, you may want to refer to the `gengift.py`
 and `genanim.py` programs, which are Python scripts that create gift
 card files of different types.
 
-###
-
-This assignment was provided as part of the Application Security Class taught by Professor Brendan Dolan-Gavitt at New York University
-
-###
-
 Finally, fix the bugs that are triggered by your test cases, and verify
 that the program no longer crashes / hangs on your test cases. To make
 sure that these bugs don't come up again as the code evolves, have
@@ -264,3 +258,9 @@ version---writing safe C code is difficult!
 
 [1] Although you are encouraged to try to prove us wrong by finding bugs
     in it!
+
+###
+
+This assignment was provided as part of the Application Security Class taught by Professor Brendan Dolan-Gavitt at New York University
+
+###
