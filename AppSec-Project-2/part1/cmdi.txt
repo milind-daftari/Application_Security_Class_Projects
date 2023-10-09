@@ -1,0 +1,4 @@
+http://localhost:8000/use.html
+card_data=TEST
+card_supplied=True
+card_fname= & echo "hello" ; 

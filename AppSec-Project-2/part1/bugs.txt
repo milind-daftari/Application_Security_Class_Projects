@@ -1,0 +1,68 @@
+Bug 1: Cross-Site Scripting (XSS)
+
+Attack URL 1: http://localhost:8000/buy.html?director=%3Cscript%3Ealert(%22hello%22)%3C/script%3E
+Vulnerable Page 1: item-single.html
+
+Attack URL 2: http://localhost:8000/gift.html?director=%3Cscript%3Ealert(%22hello%22)%3C/script%3E
+Vulnerable Page 2: gift.html
+
+Vulnerable Parameter: director
+Payload: <script>alert("hello")</script>
+
+How to Reproduce: A parameter called "director" is used in gift.html and item-single.html. This parameter was marked as safe (|safe), which means that Django's default security policy was disabled and execution of HTML and JavaScript was allowed. So, if we supply javascript as value to "director", it will execute the javascript at runtime on the browser, and we will get the pop-up.
+
+Fix: Remove "|safe" from "Endorsed by {{director|safe}}" and keep it as "Endorsed by {{director}}".
+
+----------------------------------------------------------------------------------------------------
+
+Bug 2: Cross-Site Request Forgery (XSRF)
+
+Attack URL: http://localhost:8000/gift/0
+Vulnerable Page: gift.html
+Vulnerable Function: gift_card_view in views.py
+Payload:
+<html>
+    <body onload="xsrf.submit()">
+        <form name="xsrf" method="GET" action="http://localhost:8000/gift/0">
+            <input type="hidden" name="amount" id="amount" value="1" />
+            <input type="hidden" name="username" id="username" value="test2">
+        </form>
+    </body>
+</html>
+
+How to Reproduce: When a user is logged in with a valid session, as soon as they click on the malicious XSRF Payload html file, an authenticated GET request is sent from their browser to the application server, triggering the action of gifting a gift card to user named "test2", without the current users knowledge.
+
+Fix: There are two fixes-
+1. Add XSRF Protections in middleware, view and form.
+2. Remove vulnerable code allowing state change (gifting of card) via GET request.
+
+----------------------------------------------------------------------------------------------------
+
+Bug 3: SQL Injection
+
+Attack URL: http://localhost:8000/use.html
+Vulnerable Page: use.html
+Vulnerable Function: use_card_view
+Payload: {"merchant_id": "NYU Apparel Card", "customer_id": "test3", "total_value": 95, "records": [{"record_type": "amount_change", "amount_added": 2000, "signature": "1=1' UNION SELECT (SELECT password FROM LegacySite_user WHERE username='admin') as password FROM LegacySite_user WHERE '1=1"}]}
+
+How to Reproduce: Initially, try to identify the database name from the requests, responses and the code. After that identify the column names. Based on that information, check for sections in the website which allow uploads and process incoming data within SQL queries directly without sanitizing it.
+Craft a .gftcrd file called sqli.gftcard with the above given payload and upload it. The sql code in the signature section of the giftcard file will be executed on the server with an assumption that it is legitimate sql code.
+
+Salt + Password: 000000000000000000000000000078d2$18821d89de11ab18488fdc0a01f1ddf4d290e198b0f80cd4974fc031dc2615a3
+Salt: 000000000000000000000000000078d2
+Hashed Password: 18821d89de11ab18488fdc0a01f1ddf4d290e198b0f80cd4974fc031dc2615a3
+
+Fix: Parameterize the sql queries so that even if an attacker sends sql code in place of signature, the code will not be executed.
+
+----------------------------------------------------------------------------------------------------
+
+Bug 4: Command Injection
+
+Attack URL: http://localhost:8000/use.html
+Vulnerable Page: use.html
+Vulnerable Function: parse_card_data in extras.py
+Payload:  & echo "hello" ; 
+
+How to Reproduce: Navigate to use_html and try to upload a card to use. The JSON inside the gift card should be invalid, so that the execution comes out of the try except block and enters the code execution section. As soon as that happens, the payload which is supplied as the file name, alters the code to be executed such that echo "hello" runs together with the giftcardreader_linux 2 command set due to the '&'. After that, the next code relies on echo "hello" to complete due to the ';'. This results in execution of echo "hello" on the server.
+
+Fix: If the supplied card_fname doesnt contain alphanumeric characters, a static name is given to the card which depends on the user id and not the supplied name, therefore, the payload never reaches the execution line.
