@@ -220,3 +220,9 @@ Despite the fixes you've made, there are almost certainly still many
 bugs lurking in the application, and the overall design of the application could
 be better done. With enough changes, this application could serve as a decent
 front-end for a REST API, but that API would also have to be audited.
+
+###
+
+This assignment was provided as part of the Application Security Class taught by Professor Brendan Dolan-Gavitt at New York University
+
+###

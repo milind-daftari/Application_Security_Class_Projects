@@ -290,3 +290,9 @@ the assignment, they should help you learn a lot about how using cloud
 deployment helps you preserve the availability of your service (and the
 micro-services that comprise it) and how good monitoring and logging can help you
 spot errors in the application before they become serious issues.
+
+###
+
+This assignment was provided as part of the Application Security Class taught by Professor Brendan Dolan-Gavitt at New York University
+
+###

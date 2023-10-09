@@ -237,3 +237,9 @@ it exists now is difficult to read, and therefore difficult to fix. It
 also unecessarily uses home-brewed solutions for things that can be solved
 easily with common libraries or Django built-ins. This is certainly not
 code that you should seek to reproduce, or use as an example of good code.
+
+###
+
+This assignment was provided as part of the Application Security Class taught by Professor Brendan Dolan-Gavitt at New York University
+
+###
